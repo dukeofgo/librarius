@@ -1,0 +1,80 @@
+services:
+  fastapi:
+    build: carbonlibrary
+    container_name: fastapi_container
+    env_file:
+      - .env
+    environment:
+      - HASH_ALGORITHM=${HASH_ALGORITHM}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - SECRET_KEY=${SECRET_KEY}
+      - PG_DATABASE_URL=${PG_DATABASE_URL}
+      - CLOUDFLARE_R2_BUCKET=${CLOUDFLARE_R2_BUCKET}
+      - CLOUDFLARE_R2_ACCESS_KEY_ID=${CLOUDFLARE_R2_ACCESS_KEY_ID}
+      - CLOUDFLARE_R2_SECRET_KEY=${CLOUDFLARE_R2_SECRET_KEY}
+      - CLOUDFLARE_R2_ENDPOINT=${CLOUDFLARE_R2_ENDPOINT}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    restart: always
+    #privileged: true
+    volumes:
+    # config for using Unix sockets (instead of TCP/IP)
+      - /etc/systemd/system/gunicorn.socket /etc/systemd/system/gunicorn.socket
+      - /etc/systemd/system/gunicorn.service /etc/systemd/system/gunicorn.service
+  reactjs:
+    build: reaction-project
+    container_name: reactjs_container
+    env_file:
+      - .env
+    environment:
+      - VITE_REACT_APP_REQUEST_BASEAPI_ENDPOINT=${VITE_REACT_APP_REQUEST_BASEAPI_ENDPOINT}
+      - VITE_REACT_APP_REQUEST_LOGIN_ENDPOINT=${VITE_REACT_APP_REQUEST_LOGIN_ENDPOINT}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - postgres
+    restart: always
+
+  postgres:
+    image: postgres
+    container_name: postgres_container
+    env_file:
+      - .env
+    #${} is used to access the environment variables of env file, which is defined in the env_file section.
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    restart: always
+  #psql -d postgres -U postgres 
+  #postgres=# CREATE USER carbonuser WITH PASSWORD 'admin2291';
+  #postgres=# CREATE DATABASE carbondb OWNER carbonuser;
+  #postgres=# GRANT ALL PRIVILEGES ON DATABASE carbondb TO carbonuser;
+
+  nginx:
+    image: nginx
+    container_name: nginx_container
+    ports:
+      - "80:80"
+    volumes:
+      - /etc/nginx/conf.d /etc/nginx/conf.d
+    depends_on:
+      - fastapi
+      - reactjs
+      - postgres
+
+volumes:
+  postgres_data:
+
+

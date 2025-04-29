@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: 'Iosevka';
+    src: url('assets/Iosevka-Regular.ttf');
+}
+@font-face {
+    font-family: 'Iosevka-extended';
+    src: url('assets/Iosevka-Extended.ttf');
+}
+
+@layer base {
+    /* REMOVE INPUT'S NUMBER ARROWS */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    html, body {
+        @apply m-0 p-0 bg-black text-white font-iosevkaEx;
+    }
+    input {
+        @apply focus:outline-none
+    }
+
+}
